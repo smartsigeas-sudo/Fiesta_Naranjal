@@ -1,0 +1,866 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Libre+Franklin:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+
+  :root{
+    --bg-cream:#F7EEDD;
+    --paper:#FFFBF2;
+    --wood-dark:#231410;
+    --wood-mid:#3D241A;
+    --brick:#8A2A1E;
+    --brick-dark:#661E15;
+    --ember:#D9762E;
+    --flame:#F0B429;
+    --ink:#2A1B12;
+    --ink-soft:#6B5644;
+    --line:#E4D3B8;
+    --ok-bg:#EFE6D2;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-cream);
+    color:var(--ink);
+    font-family:'Libre Franklin',sans-serif;
+    min-height:100vh;
+  }
+  #root{min-height:100vh;}
+
+  h1,h2,h3,.display{
+    font-family:'Anton',sans-serif;
+    font-weight:400;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+    color:var(--wood-dark);
+  }
+  .mono{font-family:'Space Mono',monospace;}
+
+  /* ---------- Top banner ---------- */
+  .banner{
+    background:
+      radial-gradient(circle at 8px 8px, rgba(255,255,255,.06) 2px, transparent 2.5px) 0 0/16px 16px,
+      linear-gradient(160deg,var(--wood-dark),var(--wood-mid) 60%,var(--brick-dark));
+    color:var(--paper);
+    padding:22px 24px 20px;
+    position:relative;
+    border-bottom:6px solid var(--flame);
+  }
+  .banner-row{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    max-width:1100px;margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-badge{
+    width:52px;height:52px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, var(--flame), var(--ember) 55%, var(--brick) 100%);
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 0 0 3px var(--wood-dark), 0 0 0 5px var(--flame);
+    flex:none;
+  }
+  .brand-badge svg{width:28px;height:28px;}
+  .brand-text .eyebrow{
+    font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;
+    color:var(--flame);text-transform:uppercase;
+  }
+  .brand-text h1{margin:2px 0 0;font-size:clamp(22px,4vw,32px);color:var(--paper);}
+  .role-pill{
+    font-family:'Space Mono',monospace;font-size:12px;
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);
+    color:var(--paper);padding:7px 14px;border-radius:999px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .role-pill button{
+    background:none;border:none;color:var(--flame);font-family:'Space Mono',monospace;
+    font-size:11px;cursor:pointer;text-decoration:underline;padding:0;
+  }
+
+  .wrap{max-width:1100px;margin:0 auto;padding:28px 20px 60px;}
+
+  /* ---------- Landing / role select ---------- */
+  .landing{
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+    padding:50px 20px 30px;gap:6px;
+  }
+  .landing p.lead{max-width:480px;color:var(--ink-soft);font-size:15px;margin:8px 0 30px;}
+  .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:680px;width:100%;}
+  @media(max-width:560px){.role-grid{grid-template-columns:1fr;}}
+  .role-card{
+    background:var(--paper);border:2px solid var(--line);border-radius:14px;
+    padding:26px 22px;text-align:left;cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .role-card:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(42,27,18,.12);border-color:var(--ember);}
+  .role-card .icon{
+    width:44px;height:44px;border-radius:10px;
+    background:var(--ok-bg);display:flex;align-items:center;justify-content:center;
+    color:var(--brick);
+  }
+  .role-card h3{font-size:19px;margin:2px 0 0;}
+  .role-card p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.5;}
+
+  /* ---------- Generic panels ---------- */
+  .panel{
+    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    padding:22px;margin-bottom:22px;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+  .panel-head h2{font-size:18px;margin:0;}
+  .panel-head .hint{font-size:12.5px;color:var(--ink-soft);font-family:'Space Mono',monospace;}
+
+  /* ---------- Stat chips (ficha/token motif) ---------- */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+  @media(max-width:640px){.stats{grid-template-columns:1fr;}}
+  .chip{
+    position:relative;background:var(--paper);border:2px dashed var(--line);
+    border-radius:16px;padding:18px 18px 16px;overflow:hidden;
+  }
+  .chip::before{
+    content:"";position:absolute;left:-9px;top:50%;transform:translateY(-50%);
+    width:18px;height:18px;border-radius:50%;background:var(--bg-cream);border:2px dashed var(--line);
+  }
+  .chip::after{
+    content:"";position:absolute;right:-9px;top:50%;transform:translateY(-50%);
+    width:18px;height:18px;border-radius:50%;background:var(--bg-cream);border:2px dashed var(--line);
+  }
+  .chip .num{font-family:'Anton',sans-serif;font-size:34px;line-height:1;color:var(--wood-dark);}
+  .chip .lbl{font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-soft);margin-top:4px;}
+  .chip.retirado{border-color:var(--ember);}
+  .chip.retirado .num{color:var(--brick);}
+  .chip.pendiente .num{color:var(--ember);}
+
+  /* ---------- Forms ---------- */
+  label{font-size:12.5px;font-weight:600;color:var(--ink-soft);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+  input[type=text], input[type=number], input[type=password], select, textarea{
+    width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;
+    font-family:'Libre Franklin',sans-serif;font-size:14px;background:var(--bg-cream);color:var(--ink);
+  }
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--ember);outline-offset:1px;border-color:var(--ember);}
+  .field{margin-bottom:14px;}
+  .grid-form{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:12px;align-items:end;}
+  @media(max-width:720px){.grid-form{grid-template-columns:1fr;}}
+
+  .btn{
+    font-family:'Libre Franklin',sans-serif;font-weight:700;font-size:13.5px;
+    border:none;border-radius:9px;padding:11px 18px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;transition:filter .1s ease, transform .05s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:var(--brick);color:var(--paper);}
+  .btn-primary:hover{filter:brightness(1.08);}
+  .btn-ghost{background:transparent;color:var(--brick);border:1.5px solid var(--brick);}
+  .btn-ghost:hover{background:rgba(138,42,30,.06);}
+  .btn-flame{background:var(--flame);color:var(--wood-dark);}
+  .btn-flame:hover{filter:brightness(1.05);}
+  .btn-sm{padding:7px 12px;font-size:12px;border-radius:7px;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+
+  /* ---------- Table ---------- */
+  .table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:640px;}
+  thead th{
+    text-align:left;font-family:'Space Mono',monospace;font-size:11px;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--ink-soft);background:var(--ok-bg);padding:10px 12px;
+    position:sticky;top:0;
+  }
+  tbody td{padding:9px 12px;border-top:1px solid var(--line);vertical-align:middle;}
+  tbody tr:hover{background:rgba(217,118,46,.06);}
+  .nro-cell{font-family:'Space Mono',monospace;font-weight:700;color:var(--wood-dark);}
+  .status-badge{
+    display:inline-flex;align-items:center;gap:6px;font-family:'Space Mono',monospace;
+    font-size:11px;padding:4px 10px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .status-badge.si{background:#E9E1CF;color:var(--brick);border:1px solid var(--brick);}
+  .status-badge.no{background:transparent;color:var(--ink-soft);border:1px solid var(--line);}
+  .status-badge.retirado{background:var(--brick);color:var(--paper);}
+  .status-badge.pendiente{background:transparent;color:var(--ember);border:1.5px solid var(--flame);}
+  .row-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  tr.is-retirado td{opacity:.68;}
+
+  .search-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+  .search-row input{max-width:260px;}
+  .filter-tabs{display:flex;gap:6px;}
+  .filter-tabs button{
+    font-family:'Space Mono',monospace;font-size:11.5px;border:1.5px solid var(--line);
+    background:var(--paper);color:var(--ink-soft);padding:7px 12px;border-radius:999px;cursor:pointer;
+  }
+  .filter-tabs button.active{background:var(--wood-dark);border-color:var(--wood-dark);color:var(--paper);}
+
+  .empty{
+    text-align:center;padding:36px 20px;color:var(--ink-soft);font-size:13.5px;
+  }
+  .empty .icon{font-size:30px;margin-bottom:8px;}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--wood-dark);color:var(--paper);padding:11px 20px;border-radius:9px;
+    font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:50;
+    border-left:4px solid var(--flame);
+  }
+
+  .modal-bg{
+    position:fixed;inset:0;background:rgba(35,20,16,.55);display:flex;align-items:center;justify-content:center;
+    z-index:60;padding:20px;
+  }
+  .modal{background:var(--paper);border-radius:14px;padding:26px;max-width:380px;width:100%;}
+  .modal h3{margin-top:0;}
+  .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+
+  .inline-edit-row td{padding:8px 10px;}
+  .inline-edit-row input,.inline-edit-row select{padding:7px 9px;font-size:13px;}
+
+  .small-note{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+  .back-link{background:none;border:none;color:var(--flame);font-family:'Space Mono',monospace;font-size:12px;cursor:pointer;text-decoration:underline;padding:0;}
+  .upload-drop{
+    border:2px dashed var(--line);border-radius:10px;padding:20px;text-align:center;
+    background:var(--bg-cream);cursor:pointer;
+  }
+  .upload-drop:hover{border-color:var(--ember);}
+  .upload-drop input{display:none;}
+</style>
+
+<div id="root"></div>
+
+<script>
+(function(){
+  const FIREBASE_URL = 'https://fiesta-de-la-costilla-default-rtdb.firebaseio.com/';
+  const FICHAS_ENDPOINT = FIREBASE_URL + 'fichas.json';
+  const FIREBASE_API_KEY = 'AIzaSyD3QEt9uFFR4nzTvaMEQ7p8Jxda0Myfo9Y';
+  const ADMIN_EMAIL = 'smartsigeas@gmail.com';
+  const AUTH_STORAGE_KEY = 'costilla_admin_auth';
+  const POLL_MS = 6000;
+
+  let state = {
+    role: null,           // 'admin' | 'standard'
+    fichas: [],
+    loading: true,
+    filter: 'todas',      // todas | retirado | pendiente
+    search: '',
+    editingNro: null,
+    toast: null,
+    showLoginModal: false,
+    loginError: '',
+    loginLoading: false,
+  };
+
+  function setState(patch){
+    state = Object.assign({}, state, patch);
+    render();
+  }
+
+  function showToast(msg){
+    setState({toast: msg});
+    clearTimeout(window.__toastTimer);
+    window.__toastTimer = setTimeout(()=>setState({toast:null}), 2600);
+  }
+
+  let connError = false;
+
+  // ---------- Firebase Auth (admin only) ----------
+  function getStoredAuth(){
+    try{ return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null'); }
+    catch(e){ return null; }
+  }
+  function storeAuth(auth){
+    try{ localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth)); }catch(e){}
+  }
+  function clearAuth(){
+    try{ localStorage.removeItem(AUTH_STORAGE_KEY); }catch(e){}
+  }
+
+  async function signInAdmin(email, password){
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({email, password, returnSecureToken:true})
+    });
+    const data = await res.json();
+    if(!res.ok){
+      const code = (data.error && data.error.message) || '';
+      if(code.includes('INVALID_LOGIN_CREDENTIALS') || code.includes('EMAIL_NOT_FOUND') || code.includes('INVALID_PASSWORD')){
+        throw new Error('Email o contraseña incorrectos.');
+      }
+      throw new Error('No se pudo iniciar sesión. Intentá de nuevo.');
+    }
+    const auth = {
+      idToken:data.idToken, refreshToken:data.refreshToken,
+      expiresAt: Date.now() + (parseInt(data.expiresIn,10)*1000), email
+    };
+    storeAuth(auth);
+    return auth;
+  }
+
+  async function refreshAuthToken(auth){
+    const res = await fetch(`https://securetoken.googleapis.com/v1/token?key=${FIREBASE_API_KEY}`, {
+      method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(auth.refreshToken)}`
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error('refresh failed');
+    const newAuth = {
+      idToken:data.id_token, refreshToken:data.refresh_token,
+      expiresAt: Date.now() + (parseInt(data.expires_in,10)*1000), email:auth.email
+    };
+    storeAuth(newAuth);
+    return newAuth;
+  }
+
+  // Returns a valid (non-expired) auth object, refreshing if needed, or null if not logged in.
+  async function ensureFreshAuth(){
+    let auth = getStoredAuth();
+    if(!auth) return null;
+    if(Date.now() > auth.expiresAt - 5*60*1000){
+      try{ auth = await refreshAuthToken(auth); }
+      catch(e){ clearAuth(); return null; }
+    }
+    return auth;
+  }
+
+  function logoutAdmin(){
+    clearAuth();
+    setState({role:null, editingNro:null});
+    showToast('Sesión cerrada.');
+  }
+
+  async function loadFichas(silent){
+    try{
+      const res = await fetch(FICHAS_ENDPOINT);
+      if(!res.ok) throw new Error('bad response');
+      const data = await res.json();
+      const fichas = Array.isArray(data) ? data.filter(Boolean) : (data ? Object.values(data) : []);
+      if(connError){ connError = false; showToast('Conexión restablecida.'); }
+      setState({fichas, loading:false});
+    }catch(e){
+      connError = true;
+      if(!silent) showToast('No se pudo conectar con la base de datos. Revisá tu conexión.');
+      setState({loading:false});
+    }
+  }
+
+  async function saveFichas(fichas){
+    try{
+      const auth = await ensureFreshAuth();
+      if(!auth){
+        showToast('Tu sesión expiró. Iniciá sesión de nuevo para guardar cambios.');
+        setState({role:null, editingNro:null});
+        return;
+      }
+      const res = await fetch(FICHAS_ENDPOINT + '?auth=' + encodeURIComponent(auth.idToken), {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(fichas)
+      });
+      if(!res.ok) throw new Error('bad response');
+    }catch(e){
+      showToast('No se pudo guardar en la base de datos. Verificá tu conexión e intentá de nuevo.');
+    }
+  }
+
+  // Poll periodically so other devices' changes show up without a manual refresh
+  setInterval(()=>{
+    if(state.role && state.editingNro===null && !state.showLoginModal){
+      loadFichas(true);
+    }
+  }, POLL_MS);
+
+  function normEmpresa(s){ return (s||'').toString().trim(); }
+  function normNro(s){ return (s||'').toString().trim(); }
+
+  // ---------- Bulk import ----------
+  function mergeImported(rows){
+    // rows: [{nro, empresa, factura(bool)}]
+    const map = {};
+    state.fichas.forEach(f=>map[f.nro]=f);
+    let added=0, updated=0;
+    rows.forEach(r=>{
+      const nro = normNro(r.nro);
+      const empresa = normEmpresa(r.empresa);
+      if(!nro || !empresa) return;
+      if(map[nro]){
+        map[nro] = Object.assign({}, map[nro], {empresa, factura: r.factura});
+        updated++;
+      } else {
+        map[nro] = {nro, empresa, factura: r.factura, retirado:false, retiradoEn:null};
+        added++;
+      }
+    });
+    const merged = Object.values(map).sort((a,b)=> a.nro.localeCompare(b.nro, undefined, {numeric:true}));
+    setState({fichas: merged});
+    saveFichas(merged);
+    showToast(`Importado: ${added} nueva(s), ${updated} actualizada(s).`);
+  }
+
+  function parseFactura(val){
+    const s = (val===undefined||val===null)?'':val.toString().trim().toLowerCase();
+    return ['si','sí','x','yes','true','1'].includes(s);
+  }
+
+  function handleFile(file){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      try{
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, {type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {defval:''});
+        if(!json.length){ showToast('El archivo no tiene filas.'); return; }
+        const keys = Object.keys(json[0]);
+        const kNro = keys.find(k=>/nro|numero|número|ficha/i.test(k)) || keys[0];
+        const kEmp = keys.find(k=>/empresa|cliente|nombre/i.test(k)) || keys[1];
+        const kFac = keys.find(k=>/factura/i.test(k)) || keys[2];
+        const rows = json.map(row=>({
+          nro: normNro(row[kNro]),
+          empresa: normEmpresa(row[kEmp]),
+          factura: parseFactura(row[kFac]),
+        }));
+        mergeImported(rows);
+      }catch(err){
+        showToast('No se pudo leer el archivo. Verificá el formato.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function parsePastedText(text){
+    const lines = text.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length) return [];
+    let start = 0;
+    if(/nro|empresa|factura/i.test(lines[0])) start = 1;
+    const rows = [];
+    for(let i=start;i<lines.length;i++){
+      const parts = lines[i].split(/\t|,|;/).map(p=>p.trim());
+      if(parts.length<2) continue;
+      rows.push({nro: parts[0], empresa: parts[1], factura: parseFactura(parts[2])});
+    }
+    return rows;
+  }
+
+  // ---------- Actions ----------
+  function toggleRetirado(nro){
+    const fichas = state.fichas.map(f=>{
+      if(f.nro!==nro) return f;
+      const retirado = !f.retirado;
+      return Object.assign({}, f, {retirado, retiradoEn: retirado ? new Date().toISOString() : null});
+    });
+    setState({fichas});
+    saveFichas(fichas);
+  }
+
+  function deleteFicha(nro){
+    if(!confirm(`¿Eliminar la ficha ${nro}? Esta acción no se puede deshacer.`)) return;
+    const fichas = state.fichas.filter(f=>f.nro!==nro);
+    setState({fichas});
+    saveFichas(fichas);
+    showToast('Ficha eliminada.');
+  }
+
+  function startEdit(nro){ setState({editingNro: nro}); }
+  function cancelEdit(){ setState({editingNro: null}); }
+
+  function saveEdit(oldNro, newNro, empresa, factura){
+    newNro = normNro(newNro); empresa = normEmpresa(empresa);
+    if(!newNro || !empresa){ showToast('Nro y empresa son obligatorios.'); return; }
+    if(newNro!==oldNro && state.fichas.some(f=>f.nro===newNro)){
+      showToast(`Ya existe la ficha ${newNro}.`); return;
+    }
+    const fichas = state.fichas.map(f=>{
+      if(f.nro!==oldNro) return f;
+      return Object.assign({}, f, {nro:newNro, empresa, factura});
+    }).sort((a,b)=>a.nro.localeCompare(b.nro, undefined, {numeric:true}));
+    setState({fichas, editingNro:null});
+    saveFichas(fichas);
+    showToast('Ficha actualizada.');
+  }
+
+  function addManualFicha(nro, empresa, factura){
+    nro = normNro(nro); empresa = normEmpresa(empresa);
+    if(!nro || !empresa){ showToast('Completá nro de ficha y empresa.'); return false; }
+    if(state.fichas.some(f=>f.nro===nro)){ showToast(`Ya existe la ficha ${nro}.`); return false; }
+    const fichas = state.fichas.concat([{nro, empresa, factura, retirado:false, retiradoEn:null}])
+      .sort((a,b)=>a.nro.localeCompare(b.nro, undefined, {numeric:true}));
+    setState({fichas});
+    saveFichas(fichas);
+    showToast('Ficha agregada.');
+    return true;
+  }
+
+  // ---------- Derived ----------
+  function summary(fichas){
+    const total = fichas.length;
+    const retirado = fichas.filter(f=>f.retirado).length;
+    return {total, retirado, pendiente: total-retirado};
+  }
+
+  function filteredFichas(){
+    let list = state.fichas;
+    if(state.filter==='retirado') list = list.filter(f=>f.retirado);
+    if(state.filter==='pendiente') list = list.filter(f=>!f.retirado);
+    if(state.search.trim()){
+      const q = state.search.trim().toLowerCase();
+      list = list.filter(f=> f.nro.toLowerCase().includes(q) || f.empresa.toLowerCase().includes(q));
+    }
+    return list;
+  }
+
+  // ---------- Icons (inline svg, no external IP) ----------
+  const ICONS = {
+    grill: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h16"/><path d="M6 12v6a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6"/><path d="M8 12V7a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"/><path d="M9 9c0-1 .8-1 .8-2S9 5.5 9 4.5"/><path d="M13 9c0-1 .8-1 .8-2S13 5.5 13 4.5"/></svg>`,
+    list: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg>`,
+    check: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+    edit: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>`,
+    trash: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>`,
+    upload: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 16V4"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg>`,
+  };
+
+  // ---------- Render ----------
+  function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstElementChild; }
+  function esc(s){ return (s||'').toString().replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  function renderBanner(){
+    const roleLabel = state.role==='admin' ? 'Panel administrador' : state.role==='standard' ? 'Consulta general' : '';
+    return `
+    <div class="banner">
+      <div class="banner-row">
+        <div class="brand">
+          <div class="brand-badge">${ICONS.grill.replace('currentColor', '#231410')}</div>
+          <div class="brand-text">
+            <div class="eyebrow">Naranjal · Alto Paraná</div>
+            <h1>Fiesta de la Costilla</h1>
+          </div>
+        </div>
+        ${state.role ? `
+          <div class="role-pill">
+            ${esc(roleLabel)}
+            <button id="btn-change-role">cambiar</button>
+            ${state.role==='admin' ? '<button id="btn-logout">cerrar sesión</button>' : ''}
+          </div>` : ''}
+      </div>
+    </div>`;
+  }
+
+  function renderLanding(){
+    return `
+    <div class="wrap">
+      <div class="landing">
+        <div class="eyebrow" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.18em;color:var(--ember);text-transform:uppercase;">Control de fichas</div>
+        <h2 style="font-size:clamp(24px,5vw,34px);margin:6px 0 0;">¿Cómo querés ingresar?</h2>
+        <p class="lead">Elegí tu rol para ver el listado de fichas vendidas y su estado de retiro.</p>
+        <div class="role-grid">
+          <div class="role-card" id="card-admin">
+            <div class="icon">${ICONS.edit}</div>
+            <h3>Administrador</h3>
+            <p>Cargá el listado de fichas, editá datos y marcá los retiros. Requiere PIN.</p>
+          </div>
+          <div class="role-card" id="card-standard">
+            <div class="icon">${ICONS.list}</div>
+            <h3>Consulta</h3>
+            <p>Mirá el listado completo y el resumen de fichas retiradas y pendientes.</p>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderLoginModal(){
+    if(!state.showLoginModal) return '';
+    return `
+    <div class="modal-bg" id="login-modal-bg">
+      <div class="modal">
+        <h3>Ingreso de administrador</h3>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="login-email" placeholder="admin@ejemplo.com" value="${esc(ADMIN_EMAIL)}" autocomplete="username">
+        </div>
+        <div class="field">
+          <label>Contraseña</label>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        ${state.loginError ? `<div class="small-note" style="color:var(--brick);">${esc(state.loginError)}</div>` : ''}
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="login-cancel">Cancelar</button>
+          <button class="btn btn-primary btn-sm" id="login-confirm" ${state.loginLoading?'disabled':''}>${state.loginLoading?'Ingresando...':'Ingresar'}</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function renderStats(fichas){
+    const s = summary(fichas);
+    return `
+    <div class="stats">
+      <div class="chip"><div class="num mono">${s.total}</div><div class="lbl">Fichas totales</div></div>
+      <div class="chip retirado"><div class="num mono">${s.retirado}</div><div class="lbl">Ya retiradas</div></div>
+      <div class="chip pendiente"><div class="num mono">${s.pendiente}</div><div class="lbl">Faltan retirar</div></div>
+    </div>`;
+  }
+
+  function renderSearchRow(){
+    return `
+    <div class="search-row">
+      <input type="text" id="search-input" placeholder="Buscar por nro o empresa..." value="${esc(state.search)}">
+      <div class="filter-tabs">
+        <button data-filter="todas" class="${state.filter==='todas'?'active':''}">Todas</button>
+        <button data-filter="retirado" class="${state.filter==='retirado'?'active':''}">Retiradas</button>
+        <button data-filter="pendiente" class="${state.filter==='pendiente'?'active':''}">Pendientes</button>
+      </div>
+    </div>`;
+  }
+
+  function renderStandardTable(list){
+    if(!list.length){
+      return `<div class="empty"><div class="icon">🍖</div>No hay fichas para mostrar con este filtro.</div>`;
+    }
+    return `
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Nro. ficha</th><th>Empresa</th><th>Factura</th><th>Estado</th></tr></thead>
+        <tbody>
+          ${list.map(f=>`
+            <tr class="${f.retirado?'is-retirado':''}">
+              <td class="nro-cell">${esc(f.nro)}</td>
+              <td>${esc(f.empresa)}</td>
+              <td><span class="status-badge ${f.factura?'si':'no'}">${f.factura?'Sí':'No'}</span></td>
+              <td><span class="status-badge ${f.retirado?'retirado':'pendiente'}">${f.retirado?'Retirado':'Pendiente'}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  function renderAdminRow(f){
+    if(state.editingNro===f.nro){
+      return `
+      <tr class="inline-edit-row">
+        <td><input type="text" class="edit-nro mono" value="${esc(f.nro)}"></td>
+        <td><input type="text" class="edit-empresa" value="${esc(f.empresa)}"></td>
+        <td>
+          <select class="edit-factura">
+            <option value="si" ${f.factura?'selected':''}>Sí</option>
+            <option value="no" ${!f.factura?'selected':''}>No</option>
+          </select>
+        </td>
+        <td><span class="status-badge ${f.retirado?'retirado':'pendiente'}">${f.retirado?'Retirado':'Pendiente'}</span></td>
+        <td class="row-actions">
+          <button class="btn btn-primary btn-sm" data-save="${esc(f.nro)}">Guardar</button>
+          <button class="btn btn-ghost btn-sm" data-cancel="1">Cancelar</button>
+        </td>
+      </tr>`;
+    }
+    return `
+    <tr class="${f.retirado?'is-retirado':''}">
+      <td class="nro-cell">${esc(f.nro)}</td>
+      <td>${esc(f.empresa)}</td>
+      <td><span class="status-badge ${f.factura?'si':'no'}">${f.factura?'Sí':'No'}</span></td>
+      <td><span class="status-badge ${f.retirado?'retirado':'pendiente'}">${f.retirado?'Retirado':'Pendiente'}</span></td>
+      <td class="row-actions">
+        <button class="btn ${f.retirado?'btn-ghost':'btn-flame'} btn-sm" data-toggle="${esc(f.nro)}">${ICONS.check} ${f.retirado?'Anular':'Retirar'}</button>
+        <button class="btn btn-ghost btn-sm" data-edit="${esc(f.nro)}">${ICONS.edit}</button>
+        <button class="btn btn-ghost btn-sm" data-delete="${esc(f.nro)}" style="color:var(--brick);border-color:var(--brick);">${ICONS.trash}</button>
+      </td>
+    </tr>`;
+  }
+
+  function renderAdminTable(list){
+    if(!list.length){
+      return `<div class="empty"><div class="icon">🎫</div>Todavía no hay fichas cargadas. Importá un archivo o agregá una manualmente arriba.</div>`;
+    }
+    return `
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Nro. ficha</th><th>Empresa</th><th>Factura</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>${list.map(renderAdminRow).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  function renderStandardView(){
+    const list = filteredFichas();
+    return `
+    <div class="wrap">
+      ${renderStats(state.fichas)}
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Listado de fichas</h2>
+          <span class="hint">${state.fichas.length} ficha(s) en total</span>
+        </div>
+        ${renderSearchRow()}
+        ${renderStandardTable(list)}
+      </div>
+    </div>`;
+  }
+
+  function renderAdminView(){
+    const list = filteredFichas();
+    return `
+    <div class="wrap">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Cargar fichas</h2>
+          <span class="hint">Nro / Empresa / Factura</span>
+        </div>
+        <div class="upload-drop" id="upload-drop">
+          <div style="color:var(--ember);margin-bottom:6px;">${ICONS.upload}</div>
+          <div style="font-weight:700;font-size:13.5px;">Subí un archivo Excel o CSV</div>
+          <div class="small-note">Columnas: número de ficha, empresa, factura (sí/no). Se detectan automáticamente.</div>
+          <input type="file" id="file-input" accept=".xlsx,.xls,.csv">
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>O pegá filas (una por línea: nro, empresa, factura)</label>
+          <textarea id="paste-area" rows="4" placeholder="001, Distribuidora Naranjal SRL, si&#10;002, Panificadora del Este, no"></textarea>
+          <div style="margin-top:8px;">
+            <button class="btn btn-ghost btn-sm" id="paste-import">Importar filas pegadas</button>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:18px;">
+          <label style="margin-bottom:10px;">Agregar ficha manualmente</label>
+          <div class="grid-form">
+            <div class="field" style="margin-bottom:0;">
+              <input type="text" id="new-nro" placeholder="Nro. ficha">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <input type="text" id="new-empresa" placeholder="Nombre de la empresa">
+            </div>
+            <div class="field" style="margin-bottom:0;">
+              <select id="new-factura">
+                <option value="no">Factura: No</option>
+                <option value="si">Factura: Sí</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" id="add-ficha-btn" style="height:42px;">Agregar</button>
+          </div>
+        </div>
+      </div>
+
+      ${renderStats(state.fichas)}
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Listado y retiros</h2>
+          <span class="hint">${state.fichas.length} ficha(s) en total</span>
+        </div>
+        ${renderSearchRow()}
+        ${renderAdminTable(list)}
+      </div>
+    </div>`;
+  }
+
+  function render(){
+    const root = document.getElementById('root');
+    let body = '';
+    if(!state.role){
+      body = renderLanding();
+    } else if(state.loading){
+      body = `<div class="wrap"><div class="empty">Cargando fichas...</div></div>`;
+    } else if(state.role==='admin'){
+      body = renderAdminView();
+    } else {
+      body = renderStandardView();
+    }
+    root.innerHTML = renderBanner() + body + renderLoginModal() +
+      (connError && state.role ? `<div class="toast" style="background:var(--brick-dark);">Sin conexión con la base de datos. Reintentando...</div>` : '') +
+      (state.toast ? `<div class="toast">${esc(state.toast)}</div>` : '');
+    attachHandlers();
+  }
+
+  function attachHandlers(){
+    const q = sel=>document.querySelector(sel);
+    const qa = sel=>Array.from(document.querySelectorAll(sel));
+
+    const cardAdmin = q('#card-admin');
+    if(cardAdmin) cardAdmin.onclick = async ()=>{
+      const auth = await ensureFreshAuth();
+      if(auth){
+        setState({role:'admin', filter:'todas', search:''});
+        loadFichas();
+      } else {
+        setState({showLoginModal:true, loginError:''});
+      }
+    };
+    const cardStandard = q('#card-standard');
+    if(cardStandard) cardStandard.onclick = ()=>{ setState({role:'standard', filter:'todas', search:''}); loadFichas(); };
+
+    const btnChangeRole = q('#btn-change-role');
+    if(btnChangeRole) btnChangeRole.onclick = ()=> setState({role:null, editingNro:null});
+    const btnLogout = q('#btn-logout');
+    if(btnLogout) btnLogout.onclick = logoutAdmin;
+
+    const loginBg = q('#login-modal-bg');
+    if(loginBg){
+      const passInput = q('#login-password');
+      const doLogin = async ()=>{
+        const email = q('#login-email').value.trim();
+        const password = q('#login-password').value;
+        if(!email || !password){ setState({loginError:'Completá email y contraseña.'}); return; }
+        setState({loginLoading:true, loginError:''});
+        try{
+          await signInAdmin(email, password);
+          setState({role:'admin', showLoginModal:false, loginLoading:false, loginError:'', filter:'todas', search:''});
+          loadFichas();
+        }catch(err){
+          setState({loginLoading:false, loginError: err.message || 'No se pudo iniciar sesión.'});
+        }
+      };
+      q('#login-confirm').onclick = doLogin;
+      q('#login-cancel').onclick = ()=> setState({showLoginModal:false, loginError:''});
+      passInput.onkeydown = (e)=>{ if(e.key==='Enter') doLogin(); };
+      passInput.focus();
+    }
+
+    const searchInput = q('#search-input');
+    if(searchInput){
+      searchInput.oninput = (e)=> setState({search:e.target.value});
+      searchInput.focus();
+      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+    }
+    qa('.filter-tabs button').forEach(b=>{
+      b.onclick = ()=> setState({filter:b.dataset.filter});
+    });
+
+    // Admin-only handlers
+    const uploadDrop = q('#upload-drop');
+    if(uploadDrop){
+      const fileInput = q('#file-input');
+      uploadDrop.onclick = ()=> fileInput.click();
+      fileInput.onchange = (e)=>{ if(e.target.files[0]) handleFile(e.target.files[0]); };
+      uploadDrop.ondragover = (e)=>{ e.preventDefault(); uploadDrop.style.borderColor='var(--ember)'; };
+      uploadDrop.ondrop = (e)=>{ e.preventDefault(); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); };
+    }
+    const pasteBtn = q('#paste-import');
+    if(pasteBtn){
+      pasteBtn.onclick = ()=>{
+        const text = q('#paste-area').value;
+        const rows = parsePastedText(text);
+        if(!rows.length){ showToast('No se encontraron filas válidas.'); return; }
+        mergeImported(rows);
+        q('#paste-area').value='';
+      };
+    }
+    const addBtn = q('#add-ficha-btn');
+    if(addBtn){
+      addBtn.onclick = ()=>{
+        const nro = q('#new-nro').value;
+        const empresa = q('#new-empresa').value;
+        const factura = q('#new-factura').value==='si';
+        const ok = addManualFicha(nro, empresa, factura);
+        if(ok){ q('#new-nro').value=''; q('#new-empresa').value=''; q('#new-factura').value='no'; }
+      };
+    }
+    qa('[data-toggle]').forEach(b=> b.onclick = ()=> toggleRetirado(b.dataset.toggle));
+    qa('[data-delete]').forEach(b=> b.onclick = ()=> deleteFicha(b.dataset.delete));
+    qa('[data-edit]').forEach(b=> b.onclick = ()=> startEdit(b.dataset.edit));
+    qa('[data-cancel]').forEach(b=> b.onclick = cancelEdit);
+    qa('[data-save]').forEach(b=>{
+      b.onclick = ()=>{
+        const row = b.closest('tr');
+        const newNro = row.querySelector('.edit-nro').value;
+        const empresa = row.querySelector('.edit-empresa').value;
+        const factura = row.querySelector('.edit-factura').value==='si';
+        saveEdit(b.dataset.save, newNro, empresa, factura);
+      };
+    });
+  }
+
+  render();
+})();
+</script>
