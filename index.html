@@ -355,9 +355,15 @@
     }
   }
 
-  // Poll periodically so other devices' changes show up without a manual refresh
+  // Poll periodically so other devices' changes show up without a manual refresh.
+  // Skip entirely while the person is actively typing anywhere, so we never
+  // wipe out text they haven't submitted yet.
+  function isUserTyping(){
+    const t = document.activeElement && document.activeElement.tagName;
+    return t==='INPUT' || t==='TEXTAREA' || t==='SELECT';
+  }
   setInterval(()=>{
-    if(state.role && state.editingNro===null && !state.showLoginModal){
+    if(state.role && state.editingNro===null && !state.showLoginModal && !isUserTyping()){
       loadFichas(true);
     }
   }, POLL_MS);
@@ -748,13 +754,19 @@
   function render(){
     const root = document.getElementById('root');
 
-    // Remember what was focused (and cursor position) so a background
-    // refresh doesn't yank the cursor away from wherever the person is typing.
+    // Remember focus + cursor position, and the raw values of any input/
+    // textarea/select currently in the DOM, so a background refresh (or any
+    // other state update) never yanks focus away or wipes out text that
+    // hasn't been submitted yet.
     const active = document.activeElement;
     let focusInfo = null;
     if(active && root.contains(active) && active.id){
       focusInfo = {id: active.id, start: active.selectionStart, end: active.selectionEnd};
     }
+    const savedValues = {};
+    root.querySelectorAll('input[id], textarea[id], select[id]').forEach(elx=>{
+      savedValues[elx.id] = elx.value;
+    });
 
     let body = '';
     if(!state.role){
@@ -770,6 +782,13 @@
       (connError && state.role ? `<div class="toast" style="background:var(--brick-dark);">Sin conexión con la base de datos. Reintentando...</div>` : '') +
       (state.toast ? `<div class="toast">${esc(state.toast)}</div>` : '');
     attachHandlers();
+
+    // Restore any free-typed values that aren't otherwise driven by state
+    // (search-input's value comes from state.search already, so this is a no-op there).
+    Object.keys(savedValues).forEach(id=>{
+      const elx = document.getElementById(id);
+      if(elx && elx.value !== savedValues[id]) elx.value = savedValues[id];
+    });
 
     if(focusInfo){
       const el = document.getElementById(focusInfo.id);
