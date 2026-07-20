@@ -327,12 +327,23 @@
       if(!res.ok) throw new Error('bad response');
       const data = await res.json();
       const fichas = Array.isArray(data) ? data.filter(Boolean) : (data ? Object.values(data) : []);
-      if(connError){ connError = false; showToast('Conexión restablecida.'); }
+      const changed = JSON.stringify(fichas) !== JSON.stringify(state.fichas);
+      const wasError = connError;
+      connError = false;
+      if(!changed && !state.loading && !wasError){
+        // Nothing actually changed — skip the re-render entirely so the
+        // screen doesn't flash/flicker every poll cycle.
+        return;
+      }
+      if(wasError) showToast('Conexión restablecida.');
       setState({fichas, loading:false});
     }catch(e){
+      const wasError = connError;
       connError = true;
       if(!silent) showToast('No se pudo conectar con la base de datos. Revisá tu conexión.');
-      setState({loading:false});
+      if(!wasError || state.loading){
+        setState({loading:false});
+      }
     }
   }
 
