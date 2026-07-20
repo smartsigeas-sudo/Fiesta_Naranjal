@@ -747,6 +747,15 @@
 
   function render(){
     const root = document.getElementById('root');
+
+    // Remember what was focused (and cursor position) so a background
+    // refresh doesn't yank the cursor away from wherever the person is typing.
+    const active = document.activeElement;
+    let focusInfo = null;
+    if(active && root.contains(active) && active.id){
+      focusInfo = {id: active.id, start: active.selectionStart, end: active.selectionEnd};
+    }
+
     let body = '';
     if(!state.role){
       body = renderLanding();
@@ -761,6 +770,16 @@
       (connError && state.role ? `<div class="toast" style="background:var(--brick-dark);">Sin conexión con la base de datos. Reintentando...</div>` : '') +
       (state.toast ? `<div class="toast">${esc(state.toast)}</div>` : '');
     attachHandlers();
+
+    if(focusInfo){
+      const el = document.getElementById(focusInfo.id);
+      if(el && typeof el.focus === 'function'){
+        el.focus();
+        if(typeof el.setSelectionRange === 'function' && focusInfo.start!=null){
+          try{ el.setSelectionRange(focusInfo.start, focusInfo.end); }catch(e){}
+        }
+      }
+    }
   }
 
   function attachHandlers(){
@@ -810,8 +829,6 @@
     const searchInput = q('#search-input');
     if(searchInput){
       searchInput.oninput = (e)=> setState({search:e.target.value});
-      searchInput.focus();
-      searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
     }
     qa('.filter-tabs button').forEach(b=>{
       b.onclick = ()=> setState({filter:b.dataset.filter});
